@@ -2,7 +2,6 @@ import { INITIAL_ALUMNI } from '../data/dummyData';
 
 const STORAGE_KEY = 'smkn1cirebon_alumni_db';
 
-// Helper to get local data fallback
 const getLocalData = () => {
   const data = localStorage.getItem(STORAGE_KEY);
   if (!data) {
@@ -20,7 +19,11 @@ const saveLocalData = (data) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
-// API Service: Terkoneksi ke MySQL Backend (/api/alumni.php) dengan Local Fallback
+const isLocalDev = () => {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+};
+
+// API Service: Terkoneksi ke MySQL Backend (/api/alumni.php)
 export const api = {
   // GET /api/alumni.php
   async getAlumni() {
@@ -32,12 +35,22 @@ export const api = {
           saveLocalData(data);
           return data;
         }
+      } else {
+        const err = await res.json().catch(() => null);
+        if (err && err.error) {
+          throw new Error(err.error);
+        }
       }
     } catch (e) {
-      // fallback to local storage jika offline/tanpa PHP
+      if (e.message && !e.message.includes('fetch')) {
+        throw e;
+      }
     }
-    await new Promise((res) => setTimeout(res, 100));
-    return getLocalData();
+
+    if (isLocalDev()) {
+      return getLocalData();
+    }
+    throw new Error('Database server belum terhubung. Silakan buka /api/setup.php untuk menghubungkan MySQL.');
   },
 
   // GET /api/alumni.php?id=:id
@@ -51,8 +64,11 @@ export const api = {
         }
       }
     } catch (e) {
-      // fallback
+      if (e.message && !e.message.includes('fetch')) {
+        throw e;
+      }
     }
+
     const list = getLocalData();
     const found = list.find((item) => String(item.id) === String(id));
     if (!found) {
@@ -74,21 +90,25 @@ export const api = {
         const list = getLocalData();
         saveLocalData([created, ...list]);
         return created;
+      } else {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || `Gagal menyimpan ke server MySQL (HTTP ${res.status}).`);
       }
     } catch (e) {
-      // fallback
+      if (isLocalDev() && e.message.includes('fetch')) {
+        const list = getLocalData();
+        const newId = list.length > 0 ? Math.max(...list.map(a => Number(a.id) || 0)) + 1 : 1;
+        const newRecord = {
+          ...alumniData,
+          id: newId,
+          created_at: new Date().toISOString()
+        };
+        const updated = [newRecord, ...list];
+        saveLocalData(updated);
+        return newRecord;
+      }
+      throw e;
     }
-
-    const list = getLocalData();
-    const newId = list.length > 0 ? Math.max(...list.map(a => Number(a.id) || 0)) + 1 : 1;
-    const newRecord = {
-      ...alumniData,
-      id: newId,
-      created_at: new Date().toISOString()
-    };
-    const updated = [newRecord, ...list];
-    saveLocalData(updated);
-    return newRecord;
   },
 
   // PUT /api/alumni.php?id=:id
@@ -106,24 +126,22 @@ export const api = {
         if (idx !== -1) list[idx] = updated;
         saveLocalData(list);
         return updated;
+      } else {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || 'Gagal mengupdate data alumni di database server.');
       }
     } catch (e) {
-      // fallback
+      if (isLocalDev()) {
+        const list = getLocalData();
+        const index = list.findIndex((item) => String(item.id) === String(id));
+        if (index === -1) throw new Error('Alumni tidak ditemukan');
+        const updated = { ...list[index], ...updatedFields, updated_at: new Date().toISOString() };
+        list[index] = updated;
+        saveLocalData(list);
+        return updated;
+      }
+      throw e;
     }
-
-    const list = getLocalData();
-    const index = list.findIndex((item) => String(item.id) === String(id));
-    if (index === -1) {
-      throw new Error('Alumni tidak ditemukan untuk diupdate');
-    }
-    const updated = {
-      ...list[index],
-      ...updatedFields,
-      updated_at: new Date().toISOString()
-    };
-    list[index] = updated;
-    saveLocalData(list);
-    return updated;
   },
 
   // DELETE /api/alumni.php?id=:id
@@ -136,15 +154,18 @@ export const api = {
         const list = getLocalData().filter(i => String(i.id) !== String(id));
         saveLocalData(list);
         return { success: true };
+      } else {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || 'Gagal menghapus data alumni di database server.');
       }
     } catch (e) {
-      // fallback
+      if (isLocalDev()) {
+        const list = getLocalData().filter((item) => String(item.id) !== String(id));
+        saveLocalData(list);
+        return { success: true };
+      }
+      throw e;
     }
-
-    const list = getLocalData();
-    const filtered = list.filter((item) => String(item.id) !== String(id));
-    saveLocalData(filtered);
-    return { success: true };
   },
 
   // GET /api/stats.php (Statistik Dashboard & Laporan)
@@ -172,7 +193,6 @@ export const api = {
     const uniqueCountries = new Set(list.map(a => a.negara_tujuan).filter(Boolean));
     const totalNegara = uniqueCountries.size;
 
-    // Distribution by Country
     const countryCounts = {};
     list.forEach(a => {
       const c = a.negara_tujuan || 'Lainnya';
@@ -183,7 +203,6 @@ export const api = {
       alumni: count
     })).sort((a, b) => b.alumni - a.alumni);
 
-    // Distribution by Year
     const yearCounts = {};
     list.forEach(a => {
       const yr = a.tahun_keberangkatan || a.tahun_lulus || '2024';
@@ -194,7 +213,6 @@ export const api = {
       total
     })).sort((a, b) => a.year.localeCompare(b.year));
 
-    // Distribution by Activity
     const activityCounts = {};
     list.forEach(a => {
       const act = a.aktivitas || 'Bekerja';

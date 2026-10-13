@@ -66,24 +66,39 @@ define('DB_PORT', getenv('DB_PORT') ?: $db_port);
 function getDB() {
     static $pdo = null;
     if ($pdo === null) {
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+        
+        $lastErr = null;
         try {
             $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
-            $options = [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            return $pdo;
         } catch (PDOException $e) {
-            http_response_code(500);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode([
-                'success' => false,
-                'error' => 'Koneksi database MySQL gagal: ' . $e->getMessage(),
-                'tip' => 'Periksa nama database, username, dan password di aaPanel menu Database atau file dist/api/config.php'
-            ], JSON_UNESCAPED_UNICODE);
-            exit();
+            $lastErr = $e;
         }
+
+        // Coba alternatif 127.0.0.1 <-> localhost jika gagal
+        $altHost = (DB_HOST === '127.0.0.1') ? 'localhost' : '127.0.0.1';
+        try {
+            $dsn = "mysql:host=" . $altHost . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            return $pdo;
+        } catch (PDOException $e) {
+            // tetap gagal
+        }
+
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Koneksi database MySQL gagal: ' . $lastErr->getMessage(),
+            'tip' => 'Silakan buka https://alumni.buildme.web.id/api/setup.php untuk menghubungkan database secara otomatis.'
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
     }
     return $pdo;
 }
