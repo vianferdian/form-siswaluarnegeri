@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Globe2, 
   Send, 
   CheckCircle2, 
   Sparkles,
-  Lock,
   ArrowRight
 } from 'lucide-react';
 import { FormInput, FormSelect } from '../components/FormInput';
@@ -145,28 +143,18 @@ const PublicForm = () => {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-slate-50 to-white text-slate-800 antialiased py-8 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Top Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/logo-smk.png" 
-              alt="Logo SMKN 1 Cirebon" 
-              className="w-10 h-10 object-contain shrink-0" 
-            />
-            <div>
-              <h2 className="font-extrabold text-sm sm:text-base text-slate-800 leading-tight">
-                SMK Negeri 1 Cirebon
-              </h2>
-              <p className="text-[11px] text-blue-600 font-semibold">Tracer Study Alumni Luar Negeri</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/logo-smk.png" 
+            alt="Logo SMKN 1 Cirebon" 
+            className="w-11 h-11 object-contain shrink-0" 
+          />
+          <div>
+            <h2 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
+              SMK Negeri 1 Cirebon
+            </h2>
+            <p className="text-xs text-blue-600 font-semibold">Tracer Study Alumni Luar Negeri</p>
           </div>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300 shadow-2xs transition-all shrink-0"
-          >
-            <Lock className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden sm:inline">Portal Admin / Petugas</span>
-            <span className="sm:hidden">Login</span>
-          </Link>
         </div>
 
         {/* Hero Section */}

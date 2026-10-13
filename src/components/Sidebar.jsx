@@ -18,7 +18,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/admin');
   };
 
   const navItems = [

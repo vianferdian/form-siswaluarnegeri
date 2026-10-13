@@ -64,44 +64,44 @@ export const AppRoutes = () => {
       <Route path="/formulir" element={<PublicForm />} />
       <Route path="/formulir-alumni" element={<PublicForm />} />
 
-      {/* 2. Login Admin & Petugas */}
+      {/* 2. Login Admin & Petugas (Akses langsung via URL /admin) */}
+      <Route 
+        path="/admin" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+      />
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
       />
-      <Route 
-        path="/admin" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
-      />
 
-      {/* 3. Panel Admin & Pengelola (Harus Login Dulu) */}
+      {/* 3. Panel Admin & Pengelola (Wajib Login, redirect ke /admin jika belum login) */}
       <Route 
         path="/dashboard" 
-        element={isAuthenticated ? <MainLayout><Dashboard /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><Dashboard /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/alumni" 
-        element={isAuthenticated ? <MainLayout><Alumni /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><Alumni /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/alumni/add" 
-        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/alumni/edit/:id" 
-        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/alumni/detail/:id" 
-        element={isAuthenticated ? <MainLayout><DetailAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><DetailAlumni /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/report" 
-        element={isAuthenticated ? <MainLayout><Report /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><Report /></MainLayout> : <Navigate to="/admin" replace />} 
       />
       <Route 
         path="/master-options" 
-        element={isAuthenticated ? <MainLayout><MasterOptions /></MainLayout> : <Navigate to="/login" replace />} 
+        element={isAuthenticated ? <MainLayout><MasterOptions /></MainLayout> : <Navigate to="/admin" replace />} 
       />
 
       {/* Catch-all: Arahkan ke formulir utama */}
