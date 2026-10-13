@@ -27,26 +27,32 @@ const PublicForm = () => {
   });
 
   useEffect(() => {
-    const loadedOptions = {
-      konsentrasi_keahlian: optionsService.getOptions('konsentrasi_keahlian'),
-      negara_tujuan: optionsService.getOptions('negara_tujuan'),
-      skema_keberangkatan: optionsService.getOptions('skema_keberangkatan'),
-      status: optionsService.getOptions('status'),
-      aktivitas: optionsService.getOptions('aktivitas'),
-      bulan_keberangkatan: optionsService.getOptions('bulan_keberangkatan')
-    };
-    setOptions(loadedOptions);
+    const loadOptions = async () => {
+      // 1. Ambil opsi master langsung dari MySQL
+      const all = await optionsService.fetchOptionsFromDB();
+      const loadedOptions = {
+        konsentrasi_keahlian: all.konsentrasi_keahlian?.options || [],
+        negara_tujuan: all.negara_tujuan?.options || [],
+        skema_keberangkatan: all.skema_keberangkatan?.options || [],
+        status: all.status?.options || [],
+        aktivitas: all.aktivitas?.options || [],
+        bulan_keberangkatan: all.bulan_keberangkatan?.options || []
+      };
+      setOptions(loadedOptions);
 
-    // Initial default values
-    setFormData(prev => ({
-      ...prev,
-      konsentrasi_keahlian: loadedOptions.konsentrasi_keahlian[0] || '',
-      negara_tujuan: loadedOptions.negara_tujuan[0] || '',
-      skema_keberangkatan: loadedOptions.skema_keberangkatan[0] || '',
-      status: loadedOptions.status[0] || 'Sudah Berangkat',
-      aktivitas: loadedOptions.aktivitas[0] || 'Bekerja',
-      bulan_keberangkatan: loadedOptions.bulan_keberangkatan[0] || 'Januari'
-    }));
+      // Initial default values
+      setFormData(prev => ({
+        ...prev,
+        konsentrasi_keahlian: prev.konsentrasi_keahlian || loadedOptions.konsentrasi_keahlian[0] || '',
+        negara_tujuan: prev.negara_tujuan || loadedOptions.negara_tujuan[0] || '',
+        skema_keberangkatan: prev.skema_keberangkatan || loadedOptions.skema_keberangkatan[0] || '',
+        status: prev.status || loadedOptions.status[0] || 'Sudah Berangkat',
+        aktivitas: prev.aktivitas || loadedOptions.aktivitas[0] || 'Bekerja',
+        bulan_keberangkatan: prev.bulan_keberangkatan || loadedOptions.bulan_keberangkatan[0] || 'Januari'
+      }));
+    };
+
+    loadOptions();
   }, []);
 
   // Form state (No photos or documents)

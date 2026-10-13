@@ -28,8 +28,8 @@ const MasterOptions = () => {
     loadOptions();
   }, []);
 
-  const loadOptions = () => {
-    const data = optionsService.getAllOptions();
+  const loadOptions = async () => {
+    const data = await optionsService.fetchOptionsFromDB();
     setCategories(data);
   };
 
@@ -38,13 +38,13 @@ const MasterOptions = () => {
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleAddOption = (e) => {
+  const handleAddOption = async (e) => {
     e.preventDefault();
     if (!newOptionText.trim()) return;
 
-    const success = optionsService.addOption(activeTab, newOptionText);
+    const success = await optionsService.addOption(activeTab, newOptionText);
     if (success) {
-      loadOptions();
+      await loadOptions();
       setNewOptionText('');
       showNotification(`Opsi "${newOptionText.trim()}" berhasil ditambahkan ke ${categories[activeTab]?.label}.`);
     } else {
@@ -52,11 +52,11 @@ const MasterOptions = () => {
     }
   };
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = async () => {
     if (!editItem || !editItem.newText.trim()) return;
-    const success = optionsService.updateOption(activeTab, editItem.oldText, editItem.newText);
+    const success = await optionsService.updateOption(activeTab, editItem.oldText, editItem.newText);
     if (success) {
-      loadOptions();
+      await loadOptions();
       showNotification(`Opsi berhasil diperbarui menjadi "${editItem.newText.trim()}".`);
       setEditItem(null);
     } else {
@@ -64,10 +64,10 @@ const MasterOptions = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    optionsService.deleteOption(activeTab, deleteTarget);
-    loadOptions();
+    await optionsService.deleteOption(activeTab, deleteTarget);
+    await loadOptions();
     showNotification(`Opsi "${deleteTarget}" berhasil dihapus.`);
     setDeleteTarget(null);
   };

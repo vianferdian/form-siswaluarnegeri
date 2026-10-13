@@ -4,6 +4,7 @@ require_once __DIR__ . '/config.php';
 $pdo = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 
+// 1. GET: Ambil options
 if ($method === 'GET') {
     $category = $_GET['category'] ?? null;
     if ($category) {
@@ -23,6 +24,7 @@ if ($method === 'GET') {
     jsonResponse($grouped);
 }
 
+// 2. POST: Tambah option baru
 if ($method === 'POST') {
     $data = getJsonBody();
     $category = $data['category'] ?? '';
@@ -38,6 +40,24 @@ if ($method === 'POST') {
     jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()], 201);
 }
 
+// 3. PUT: Update option
+if ($method === 'PUT') {
+    $data = getJsonBody();
+    $category = $data['category'] ?? '';
+    $oldValue = trim($data['old_value'] ?? '');
+    $newValue = trim($data['new_value'] ?? '');
+
+    if (empty($category) || empty($oldValue) || empty($newValue)) {
+        jsonResponse(['success' => false, 'error' => 'Data tidak lengkap'], 400);
+    }
+
+    $stmt = $pdo->prepare("UPDATE master_options SET value = ? WHERE category = ? AND value = ?");
+    $stmt->execute([$newValue, $category, $oldValue]);
+
+    jsonResponse(['success' => true]);
+}
+
+// 4. DELETE: Hapus option
 if ($method === 'DELETE') {
     $data = getJsonBody();
     $category = $data['category'] ?? ($_GET['category'] ?? '');

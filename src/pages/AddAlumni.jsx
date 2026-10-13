@@ -32,14 +32,15 @@ const AddAlumni = () => {
     bulan_keberangkatan: []
   });
 
-  const loadDropdownOptions = () => {
+  const loadDropdownOptions = async () => {
+    const all = await optionsService.fetchOptionsFromDB();
     setOptions({
-      konsentrasi_keahlian: optionsService.getOptions('konsentrasi_keahlian'),
-      negara_tujuan: optionsService.getOptions('negara_tujuan'),
-      skema_keberangkatan: optionsService.getOptions('skema_keberangkatan'),
-      status: optionsService.getOptions('status'),
-      aktivitas: optionsService.getOptions('aktivitas'),
-      bulan_keberangkatan: optionsService.getOptions('bulan_keberangkatan')
+      konsentrasi_keahlian: all.konsentrasi_keahlian?.options || [],
+      negara_tujuan: all.negara_tujuan?.options || [],
+      skema_keberangkatan: all.skema_keberangkatan?.options || [],
+      status: all.status?.options || [],
+      aktivitas: all.aktivitas?.options || [],
+      bulan_keberangkatan: all.bulan_keberangkatan?.options || []
     });
   };
 

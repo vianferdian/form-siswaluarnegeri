@@ -61,7 +61,9 @@ export const DEFAULT_DROPDOWN_OPTIONS = {
       "Bekerja",
       "Magang",
       "Studi",
-      "Pelatihan"
+      "Studi & Bekerja (Ausbildung)",
+      "Pelatihan",
+      "Lainnya"
     ]
   },
   bulan_keberangkatan: {
@@ -85,7 +87,35 @@ export const DEFAULT_DROPDOWN_OPTIONS = {
 };
 
 export const optionsService = {
-  // Get all categories and their options
+  // Ambil data terbaru dari MySQL Database Server (/api/options.php)
+  async fetchOptionsFromDB() {
+    try {
+      const res = await fetch('/api/options.php');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          const current = this.getAllOptions();
+          const updated = { ...current };
+
+          // Perbarui options array untuk setiap kategori yang ada di MySQL
+          for (const catKey of Object.keys(data)) {
+            if (updated[catKey] && Array.isArray(data[catKey]) && data[catKey].length > 0) {
+              updated[catKey].options = data[catKey];
+            }
+          }
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          window.dispatchEvent(new Event('dropdown-options-updated'));
+          return updated;
+        }
+      }
+    } catch (e) {
+      // offline / fallback
+    }
+    return this.getAllOptions();
+  },
+
+  // Get all categories and their options (sync from cache / defaults)
   getAllOptions() {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
@@ -94,7 +124,6 @@ export const optionsService = {
     }
     try {
       const parsed = JSON.parse(data);
-      // Ensure all keys exist
       return { ...DEFAULT_DROPDOWN_OPTIONS, ...parsed };
     } catch (e) {
       return { ...DEFAULT_DROPDOWN_OPTIONS };
@@ -107,13 +136,24 @@ export const optionsService = {
     return all[categoryKey]?.options || DEFAULT_DROPDOWN_OPTIONS[categoryKey]?.options || [];
   },
 
-  // Add a new option to a category
-  addOption(categoryKey, newOption) {
+  // Add a new option to a category (Sinkron ke MySQL dan Local)
+  async addOption(categoryKey, newOption) {
     if (!newOption || !newOption.trim()) return false;
+    const trimmed = newOption.trim();
+
+    try {
+      await fetch('/api/options.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: categoryKey, value: trimmed })
+      });
+    } catch (e) {
+      // fallback
+    }
+
     const all = this.getAllOptions();
     if (!all[categoryKey]) return false;
 
-    const trimmed = newOption.trim();
     if (!all[categoryKey].options.includes(trimmed)) {
       all[categoryKey].options.push(trimmed);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
@@ -123,15 +163,27 @@ export const optionsService = {
     return false;
   },
 
-  // Update an existing option
-  updateOption(categoryKey, oldOption, newOption) {
+  // Update an existing option (Sinkron ke MySQL dan Local)
+  async updateOption(categoryKey, oldOption, newOption) {
     if (!newOption || !newOption.trim()) return false;
+    const trimmed = newOption.trim();
+
+    try {
+      await fetch('/api/options.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: categoryKey, old_value: oldOption, new_value: trimmed })
+      });
+    } catch (e) {
+      // fallback
+    }
+
     const all = this.getAllOptions();
     if (!all[categoryKey]) return false;
 
     const index = all[categoryKey].options.indexOf(oldOption);
     if (index !== -1) {
-      all[categoryKey].options[index] = newOption.trim();
+      all[categoryKey].options[index] = trimmed;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
       window.dispatchEvent(new Event('dropdown-options-updated'));
       return true;
@@ -139,8 +191,18 @@ export const optionsService = {
     return false;
   },
 
-  // Delete an option
-  deleteOption(categoryKey, optionToDelete) {
+  // Delete an option (Sinkron ke MySQL dan Local)
+  async deleteOption(categoryKey, optionToDelete) {
+    try {
+      await fetch('/api/options.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: categoryKey, value: optionToDelete })
+      });
+    } catch (e) {
+      // fallback
+    }
+
     const all = this.getAllOptions();
     if (!all[categoryKey]) return false;
 
