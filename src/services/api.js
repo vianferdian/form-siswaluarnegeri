@@ -2,7 +2,7 @@ import { INITIAL_ALUMNI } from '../data/dummyData';
 
 const STORAGE_KEY = 'smkn1cirebon_alumni_db';
 
-// Helper to get local data
+// Helper to get local data fallback
 const getLocalData = () => {
   const data = localStorage.getItem(STORAGE_KEY);
   if (!data) {
@@ -20,17 +20,39 @@ const saveLocalData = (data) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
-// API Service: Simulated backend with ready-to-plug Axios configuration
+// API Service: Terkoneksi ke MySQL Backend (/api/alumni.php) dengan Local Fallback
 export const api = {
-  // GET /api/alumni
+  // GET /api/alumni.php
   async getAlumni() {
-    await new Promise((res) => setTimeout(res, 150)); // simulate brief network latency
+    try {
+      const res = await fetch('/api/alumni.php');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          saveLocalData(data);
+          return data;
+        }
+      }
+    } catch (e) {
+      // fallback to local storage jika offline/tanpa PHP
+    }
+    await new Promise((res) => setTimeout(res, 100));
     return getLocalData();
   },
 
-  // GET /api/alumni/:id
+  // GET /api/alumni.php?id=:id
   async getAlumniById(id) {
-    await new Promise((res) => setTimeout(res, 100));
+    try {
+      const res = await fetch(`/api/alumni.php?id=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id) {
+          return data;
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
     const list = getLocalData();
     const found = list.find((item) => String(item.id) === String(id));
     if (!found) {
@@ -39,9 +61,24 @@ export const api = {
     return found;
   },
 
-  // POST /api/alumni
+  // POST /api/alumni.php (Tambah dari formulir atau admin)
   async createAlumni(alumniData) {
-    await new Promise((res) => setTimeout(res, 200));
+    try {
+      const res = await fetch('/api/alumni.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(alumniData)
+      });
+      if (res.ok) {
+        const created = await res.json();
+        const list = getLocalData();
+        saveLocalData([created, ...list]);
+        return created;
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const list = getLocalData();
     const newId = list.length > 0 ? Math.max(...list.map(a => Number(a.id) || 0)) + 1 : 1;
     const newRecord = {
@@ -54,9 +91,26 @@ export const api = {
     return newRecord;
   },
 
-  // PUT /api/alumni/:id
+  // PUT /api/alumni.php?id=:id
   async updateAlumni(id, updatedFields) {
-    await new Promise((res) => setTimeout(res, 200));
+    try {
+      const res = await fetch(`/api/alumni.php?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...updatedFields, id })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        const list = getLocalData();
+        const idx = list.findIndex(i => String(i.id) === String(id));
+        if (idx !== -1) list[idx] = updated;
+        saveLocalData(list);
+        return updated;
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const list = getLocalData();
     const index = list.findIndex((item) => String(item.id) === String(id));
     if (index === -1) {
@@ -72,17 +126,42 @@ export const api = {
     return updated;
   },
 
-  // DELETE /api/alumni/:id
+  // DELETE /api/alumni.php?id=:id
   async deleteAlumni(id) {
-    await new Promise((res) => setTimeout(res, 200));
+    try {
+      const res = await fetch(`/api/alumni.php?id=${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        const list = getLocalData().filter(i => String(i.id) !== String(id));
+        saveLocalData(list);
+        return { success: true };
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const list = getLocalData();
     const filtered = list.filter((item) => String(item.id) !== String(id));
     saveLocalData(filtered);
     return { success: true };
   },
 
-  // GET /api/statistik
+  // GET /api/stats.php (Statistik Dashboard & Laporan)
   async getStatistik() {
+    try {
+      const res = await fetch('/api/stats.php');
+      if (res.ok) {
+        const stats = await res.json();
+        if (stats && stats.total !== undefined) {
+          return stats;
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
+
+    // Client-side fallback calculation
     const list = getLocalData();
     const total = list.length;
     const sudahBerangkat = list.filter(a => a.status === 'Sudah Berangkat').length;

@@ -12,7 +12,7 @@ const Navbar = ({ onOpenSidebar, pageTitle = "Dashboard Monitoring" }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState(false);
 
-  const tracerUrl = `${window.location.origin}/tracer`;
+  const tracerUrl = `${window.location.origin}/`;
 
   const waTemplate = `Halo rekan alumni SMK Negeri 1 Cirebon! 👋
 Pihak SMK Negeri 1 Cirebon sedang melakukan pemetaan dan pendataan bagi rekan-rekan alumni yang saat ini sedang bekerja, magang, studi, atau mengikuti program di Luar Negeri.

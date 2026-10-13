@@ -13,14 +13,14 @@ import PublicForm from '../pages/PublicForm';
 import { useAuth } from '../store/authStore';
 
 // Main Protected Layout with modern Sidebar & Navbar
-const MainLayout = () => {
+const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
   // Determine current page title
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path === '/' || path.startsWith('/dashboard')) return 'Dashboard Monitoring';
+    if (path.startsWith('/dashboard')) return 'Dashboard Monitoring';
     if (path === '/alumni') return 'Data Alumni Internasional';
     if (path === '/alumni/add') return 'Tambah Alumni Baru';
     if (path.startsWith('/alumni/edit')) return 'Edit Data Alumni';
@@ -46,17 +46,7 @@ const MainLayout = () => {
         />
 
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/alumni" element={<Alumni />} />
-            <Route path="/alumni/add" element={<AddAlumni />} />
-            <Route path="/alumni/edit/:id" element={<AddAlumni />} />
-            <Route path="/alumni/detail/:id" element={<DetailAlumni />} />
-            <Route path="/report" element={<Report />} />
-            <Route path="/master-options" element={<MasterOptions />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          {children}
         </main>
       </div>
     </div>
@@ -68,21 +58,54 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Public Tracer Study Form Routes for Alumni (No Login Required) */}
+      {/* 1. Halaman Utama: Formulir Pendaftaran / Tracer Study Alumni */}
+      <Route path="/" element={<PublicForm />} />
       <Route path="/tracer" element={<PublicForm />} />
       <Route path="/formulir" element={<PublicForm />} />
       <Route path="/formulir-alumni" element={<PublicForm />} />
 
-      {/* Admin / Operator Login Route */}
-      <Route path="/login" element={<Login />} />
-
-      {/* Protected School Portal Layout */}
+      {/* 2. Login Admin & Petugas */}
       <Route 
-        path="/*" 
-        element={
-          isAuthenticated ? <MainLayout /> : <Navigate to="/login" replace />
-        } 
+        path="/login" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
       />
+      <Route 
+        path="/admin" 
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+      />
+
+      {/* 3. Panel Admin & Pengelola (Harus Login Dulu) */}
+      <Route 
+        path="/dashboard" 
+        element={isAuthenticated ? <MainLayout><Dashboard /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/alumni" 
+        element={isAuthenticated ? <MainLayout><Alumni /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/alumni/add" 
+        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/alumni/edit/:id" 
+        element={isAuthenticated ? <MainLayout><AddAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/alumni/detail/:id" 
+        element={isAuthenticated ? <MainLayout><DetailAlumni /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/report" 
+        element={isAuthenticated ? <MainLayout><Report /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/master-options" 
+        element={isAuthenticated ? <MainLayout><MasterOptions /></MainLayout> : <Navigate to="/login" replace />} 
+      />
+
+      {/* Catch-all: Arahkan ke formulir utama */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

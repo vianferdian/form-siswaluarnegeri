@@ -11,15 +11,20 @@ const Login = () => {
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     setLoading(true);
-    setTimeout(() => {
-      login(email, password, 'Admin');
-      setLoading(false);
+    try {
+      await login(email, password);
       navigate('/dashboard');
-    }, 400);
+    } catch (err) {
+      setErrorMsg(err.message || 'Login gagal! Periksa email dan kata sandi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,9 +100,15 @@ const Login = () => {
       <div className="lg:w-1/2 xl:w-5/12 bg-white flex flex-col justify-between p-8 sm:p-12 lg:p-16">
         
         {/* Top spacer or quick link */}
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
           <Link
-            to="/tracer"
+            to="/"
+            className="text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1.5"
+          >
+            <span>← Kembali ke Formulir Siswa</span>
+          </Link>
+          <Link
+            to="/"
             className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200/60 transition-colors flex items-center gap-1.5"
           >
             <Globe2 className="w-3.5 h-3.5" />
@@ -109,12 +120,19 @@ const Login = () => {
         <div className="w-full max-w-sm mx-auto my-auto py-8 space-y-6">
           <div className="space-y-1.5">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Masuk Sistem
+              Masuk Sistem Admin
             </h2>
             <p className="text-xs sm:text-sm text-slate-500">
               Masuk menggunakan akun petugas untuk mengelola database alumni.
             </p>
           </div>
+
+          {errorMsg && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -175,7 +193,7 @@ const Login = () => {
               Apakah Anda alumni yang sedang di luar negeri?
             </p>
             <Link
-              to="/tracer"
+              to="/"
               className="inline-flex items-center justify-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
             >
               <span>Isi Formulir Pendataan Mandiri di Sini</span>

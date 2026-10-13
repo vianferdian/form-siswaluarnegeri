@@ -7,7 +7,8 @@ import {
   Sliders, 
   LogOut, 
   X, 
-  School 
+  School,
+  Globe 
 } from 'lucide-react';
 import { useAuth } from '../store/authStore';
 
@@ -90,6 +91,21 @@ const Sidebar = ({ isOpen, onClose }) => {
               </NavLink>
             );
           })}
+
+          <div className="pt-4 mt-4 border-t border-slate-100">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50/80 hover:bg-blue-100 transition-colors border border-blue-200/60"
+            >
+              <div className="flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5" />
+                <span>Formulir Siswa</span>
+              </div>
+              <span className="text-[10px] text-blue-500 font-bold">↗</span>
+            </a>
+          </div>
         </nav>
 
         {/* Footer actions */}
