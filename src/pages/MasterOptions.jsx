@@ -23,6 +23,7 @@ const MasterOptions = () => {
   const [editItem, setEditItem] = useState(null); // { oldText: '', newText: '' }
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadOptions();
@@ -80,6 +81,17 @@ const MasterOptions = () => {
     }
   };
 
+  const handleSyncToDB = async () => {
+    setSyncing(true);
+    const success = await optionsService.syncAllToDB(categories);
+    setSyncing(false);
+    if (success) {
+      showNotification('✅ Semua data opsi berhasil disinkronkan ke database MySQL server! Sekarang di HP akan langsung muncul persis sama.');
+    } else {
+      alert('Gagal menyinkronkan ke database MySQL server. Pastikan koneksi database aktif.');
+    }
+  };
+
   const currentCategory = categories[activeTab] || { label: '', description: '', options: [] };
 
   return (
@@ -112,14 +124,26 @@ const MasterOptions = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleReset}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-2xs w-fit"
-          title="Reset semua dropdown ke opsi standar sekolah"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-          <span>Reset ke Default SMKN 1 Cirebon</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleSyncToDB}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
+            title="Kirim dan simpan semua daftar pilihan di laptop ini ke database MySQL server"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>{syncing ? 'Menyinkronkan...' : 'Sinkronkan Opsi ke Server MySQL'}</span>
+          </button>
+
+          <button
+            onClick={handleReset}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-2xs w-fit"
+            title="Reset semua dropdown ke opsi standar sekolah"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+            <span>Reset ke Default SMKN 1 Cirebon</span>
+          </button>
+        </div>
       </div>
 
       {/* Tab Navigation for Categories */}

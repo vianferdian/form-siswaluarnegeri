@@ -24,9 +24,60 @@ if ($method === 'GET') {
     jsonResponse($grouped);
 }
 
-// 2. POST: Tambah option baru
+// 2. POST: Tambah option atau Sync All
 if ($method === 'POST') {
     $data = getJsonBody();
+
+    // A. BATCH SYNC: Sinkronkan seluruh kategori dari Admin ke MySQL
+    if (!empty($data['action']) && $data['action'] === 'sync_all' && !empty($data['categories'])) {
+        $pdo->beginTransaction();
+        try {
+            $pdo->exec("DELETE FROM master_options");
+            $stmt = $pdo->prepare("INSERT INTO master_options (category, value, sort_order) VALUES (?, ?, ?)");
+
+            foreach ($data['categories'] as $catKey => $catData) {
+                $opts = is_array($catData) ? ($catData['options'] ?? $catData) : [];
+                $order = 1;
+                foreach ($opts as $optVal) {
+                    $optVal = trim($optVal);
+                    if ($optVal !== '') {
+                        $stmt->execute([$catKey, $optVal, $order++]);
+                    }
+                }
+            }
+            $pdo->commit();
+            jsonResponse(['success' => true, 'message' => 'Semua opsi berhasil disinkronkan ke database MySQL!']);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // B. SINGLE CATEGORY SYNC
+    if (!empty($data['category']) && isset($data['options']) && is_array($data['options'])) {
+        $category = $data['category'];
+        $pdo->beginTransaction();
+        try {
+            $stmtDel = $pdo->prepare("DELETE FROM master_options WHERE category = ?");
+            $stmtDel->execute([$category]);
+
+            $stmtIns = $pdo->prepare("INSERT INTO master_options (category, value, sort_order) VALUES (?, ?, ?)");
+            $order = 1;
+            foreach ($data['options'] as $optVal) {
+                $optVal = trim($optVal);
+                if ($optVal !== '') {
+                    $stmtIns->execute([$category, $optVal, $order++]);
+                }
+            }
+            $pdo->commit();
+            jsonResponse(['success' => true, 'message' => "Opsi kategori {$category} berhasil disinkronkan ke MySQL!"]);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // C. SINGLE ADD
     $category = $data['category'] ?? '';
     $value = trim($data['value'] ?? '');
 

@@ -212,6 +212,29 @@ export const optionsService = {
     return true;
   },
 
+  // Sinkronkan seluruh kategori ke MySQL
+  async syncAllToDB(categories) {
+    try {
+      const payload = categories || this.getAllOptions();
+      const res = await fetch('/api/options.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sync_all',
+          categories: payload
+        })
+      });
+      if (res.ok) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        window.dispatchEvent(new Event('dropdown-options-updated'));
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  },
+
   // Reset to defaults
   resetToDefault() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DROPDOWN_OPTIONS));
