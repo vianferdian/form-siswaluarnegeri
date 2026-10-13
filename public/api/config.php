@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // ========================================================
-// KREDENSIAL DATABASE MYSQL (Sesuaikan dengan aaPanel Anda)
+// KREDENSIAL DEFAULT DATABASE MYSQL
 // ========================================================
 $db_host = '127.0.0.1';
 $db_name = 'alumni_smkn1';
@@ -23,7 +23,35 @@ $db_user = 'alumni_smkn1';
 $db_pass = 'password123';
 $db_port = '3306';
 
-// Cek jika ada custom config file di folder yang sama
+// 1. Coba baca file .env jika ada (di root folder website atau di folder saat ini)
+$envPaths = [
+    dirname(__DIR__, 2) . '/.env',
+    dirname(__DIR__) . '/.env',
+    __DIR__ . '/.env'
+];
+
+foreach ($envPaths as $envFile) {
+    if (file_exists($envFile)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || strpos($line, '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                list($key, $val) = explode('=', $line, 2);
+                $key = trim($key);
+                $val = trim($val, " \t\n\r\0\x0B\"'");
+                if ($key === 'DB_HOST') $db_host = $val;
+                if ($key === 'DB_NAME') $db_name = $val;
+                if ($key === 'DB_USER') $db_user = $val;
+                if ($key === 'DB_PASS' || $key === 'DB_PASSWORD') $db_pass = $val;
+                if ($key === 'DB_PORT') $db_port = $val;
+            }
+        }
+        break;
+    }
+}
+
+// 2. Cek jika ada custom config PHP
 $customConfig = __DIR__ . '/db_custom.php';
 if (file_exists($customConfig)) {
     include_once $customConfig;
@@ -32,7 +60,7 @@ if (file_exists($customConfig)) {
 define('DB_HOST', getenv('DB_HOST') ?: $db_host);
 define('DB_NAME', getenv('DB_NAME') ?: $db_name);
 define('DB_USER', getenv('DB_USER') ?: $db_user);
-define('DB_PASS', getenv('DB_PASS') ?: $db_pass);
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : $db_pass);
 define('DB_PORT', getenv('DB_PORT') ?: $db_port);
 
 function getDB() {
@@ -52,7 +80,7 @@ function getDB() {
             echo json_encode([
                 'success' => false,
                 'error' => 'Koneksi database MySQL gagal: ' . $e->getMessage(),
-                'tip' => 'Silakan sesuaikan konfigurasi user & password di file /api/config.php atau /api/db_custom.php'
+                'tip' => 'Periksa nama database, username, dan password di aaPanel menu Database atau file dist/api/config.php'
             ], JSON_UNESCAPED_UNICODE);
             exit();
         }
